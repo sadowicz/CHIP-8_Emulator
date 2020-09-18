@@ -11,6 +11,17 @@ Chip8::Chip8() : randEngine{ chrono::system_clock::now().time_since_epoch().coun
 	randNumb = uniform_int_distribution<uint16_t>(0, 255U);
 }
 
+void Chip8::Cycle()
+{
+	opcode = (memory[programCounter] << 8u) | memory[programCounter + 1];
+	programCounter += 2;
+
+	(this->*opcodeRoutines[(opcode & 0xf000u) >> 12u])();
+
+	if(delayTimer) delayTimer--;
+	if (soundTimer) soundTimer--;
+}
+
 void Chip8::LoadROM(char const* inputFileName)
 {
 	ifstream inputFile{ inputFileName, ios::binary | ios::ate };
@@ -36,6 +47,60 @@ void Chip8::LoadFonts()
 {
 	for (unsigned int i = 0; i < FONTSET_SIZE; i++)
 		memory[FONTSET_START_ADRESS + i] = fontset[i];
+}
+
+void Chip8::InitRoutines()
+{
+	opcodeRoutines[0x0] = routine0;
+
+	opcodeRoutines[0x1] = op_1nnn;
+	opcodeRoutines[0x2] = op_2nnn;
+	opcodeRoutines[0x3] = op_3xnn;
+	opcodeRoutines[0x4] = op_4xnn;
+	opcodeRoutines[0x5] = op_5xy0;
+	opcodeRoutines[0x6] = op_6xnn;
+	opcodeRoutines[0x7] = op_7xnn;
+
+	opcodeRoutines[0x8] = routine8;
+
+	opcodeRoutines[0x9] = op_9xy0;
+	opcodeRoutines[0xa] = op_annn;
+	opcodeRoutines[0xb] = op_bnnn;
+	opcodeRoutines[0xc] = op_cxnn;
+	opcodeRoutines[0xd] = op_dxyn;
+
+	opcodeRoutines[0xe] = routineE;
+	opcodeRoutines[0xf] = routineF;
+
+
+	opcodeRoutines0[0x0] = op_00e0;
+	opcodeRoutines0[0xe] = op_00ee;
+
+
+	opcodeRoutines8[0x0] = op_8xy0;
+	opcodeRoutines8[0x1] = op_8xy1;
+	opcodeRoutines8[0x2] = op_8xy2;
+	opcodeRoutines8[0x3] = op_8xy3;
+	opcodeRoutines8[0x4] = op_8xy4;
+	opcodeRoutines8[0x5] = op_8xy5;
+	opcodeRoutines8[0x0] = op_8xy6;
+	opcodeRoutines8[0x7] = op_8xy7;
+	opcodeRoutines8[0xe] = op_8xye;
+
+
+	opcodeRoutinesE[0x1] = op_exa1;
+	opcodeRoutinesE[0xe] = op_ex9e;
+
+
+	opcodeRoutinesF[0x07] = op_fx07;
+	opcodeRoutinesF[0x0a] = op_fx0a;
+	opcodeRoutinesF[0x15] = op_fx15;
+	opcodeRoutinesF[0x18] = op_fx18;
+	opcodeRoutinesF[0x1E] = op_fx1E;
+	opcodeRoutinesF[0x29] = op_fx29;
+	opcodeRoutinesF[0x33] = op_fx33;
+	opcodeRoutinesF[0x55] = op_fx55;
+	opcodeRoutinesF[0x65] = op_fx65;
 }
 
 void Chip8::op_00e0()

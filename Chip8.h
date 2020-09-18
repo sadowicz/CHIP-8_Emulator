@@ -1,12 +1,5 @@
 #pragma once
 
-//#define REGISTERS_AMOUNT 16
-//#define MEMORY_SIZE 4096
-//#define STACK_LEVELS 16
-//#define DISPLAY_SIZE 64 * 32 // width * height
-//#define INPUT_KEYS_AMOUNT 16
-
-
 #include <cstdint>
 #include <fstream>
 #include <random>
@@ -14,11 +7,15 @@
 
 class Chip8
 {
+	typedef void (Chip8::* ExecutingRoutine)(void);
+
 public:
 	Chip8();
+	void Cycle();
 
 	void LoadROM(char const* inputFileName);
 	void LoadFonts();
+	void InitRoutines();
 
 	void op_00e0();
 	void op_00ee();
@@ -54,6 +51,13 @@ public:
 	void op_fx33();
 	void op_fx55();
 	void op_fx65();
+	inline void op_empty() { return; }
+
+	inline void routine0() { (this->*opcodeRoutines0[opcode & 0x000fu])(); }
+	inline void routine8() { (this->*opcodeRoutines8[opcode & 0x000fu])(); }
+	inline void routineE() { (this->*opcodeRoutinesE[opcode & 0x000fu])(); }
+	inline void routineF() { (this->*opcodeRoutinesF[opcode & 0x00ffu])(); }
+
 
 
 	static const unsigned int REGISTERS_AMOUNT = 16;
@@ -97,6 +101,13 @@ public:
 		0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
 		0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 	};
+
+	ExecutingRoutine opcodeRoutines[0xf + 1]{ &op_empty };
+	ExecutingRoutine opcodeRoutines0[0xe + 1]{ &op_empty };
+	ExecutingRoutine opcodeRoutines8[0xe + 1]{ &op_empty };
+	ExecutingRoutine opcodeRoutinesE[0xe + 1]{ &op_empty };
+	ExecutingRoutine opcodeRoutinesF[0x65 + 1]{ &op_empty };
+
 	std::default_random_engine randEngine;
 	std::uniform_int_distribution<uint16_t> randNumb;
 
