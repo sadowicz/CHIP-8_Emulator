@@ -2,11 +2,13 @@
 
 using namespace std;
 
-Chip8::Chip8() : randEngine{ chrono::system_clock::now().time_since_epoch().count() }
+Chip8::Chip8() : randEngine{ static_cast<unsigned int>(chrono::system_clock::now().time_since_epoch().count()) }
 {
 	programCounter = START_ADRESS;
 
 	LoadFonts();
+
+	InitRoutines();
 
 	randNumb = uniform_int_distribution<uint16_t>(0, 255U);
 }
@@ -14,16 +16,20 @@ Chip8::Chip8() : randEngine{ chrono::system_clock::now().time_since_epoch().coun
 void Chip8::Cycle()
 {
 	opcode = (memory[programCounter] << 8u) | memory[programCounter + 1];
+	//printf("%x\t", opcode);
 	programCounter += 2;
 
-	(this->*opcodeRoutines[(opcode & 0xf000u) >> 12u])();
+	int index = (opcode & 0xf000u) >> 12u;
+	//printf("%d\n", index);
+	((*this).*(opcodeRoutines[index]))();
 
-	if(delayTimer) delayTimer--;
-	if (soundTimer) soundTimer--;
+	if(delayTimer > 0) delayTimer--;
+	if (soundTimer > 0) soundTimer--;
 }
 
-void Chip8::LoadROM(char const* inputFileName)
+void Chip8::LoadROM(string inputFileName)
 {
+
 	ifstream inputFile{ inputFileName, ios::binary | ios::ate };
 
 	if(inputFile.is_open())
@@ -31,7 +37,7 @@ void Chip8::LoadROM(char const* inputFileName)
 		streampos fileSize = inputFile.tellg();
 		char* readBuffer = new char[fileSize];
 
-		inputFile.seekg(0, ios_base::beg);
+		inputFile.seekg(0, ios::beg);
 		inputFile.read(readBuffer, fileSize);
 
 		inputFile.close();
@@ -51,56 +57,56 @@ void Chip8::LoadFonts()
 
 void Chip8::InitRoutines()
 {
-	opcodeRoutines[0x0] = routine0;
+	opcodeRoutines[0x0] = &Chip8::routine0;
 
-	opcodeRoutines[0x1] = op_1nnn;
-	opcodeRoutines[0x2] = op_2nnn;
-	opcodeRoutines[0x3] = op_3xnn;
-	opcodeRoutines[0x4] = op_4xnn;
-	opcodeRoutines[0x5] = op_5xy0;
-	opcodeRoutines[0x6] = op_6xnn;
-	opcodeRoutines[0x7] = op_7xnn;
+	opcodeRoutines[0x1] = &Chip8::op_1nnn;
+	opcodeRoutines[0x2] = &Chip8::op_2nnn;
+	opcodeRoutines[0x3] = &Chip8::op_3xnn;
+	opcodeRoutines[0x4] = &Chip8::op_4xnn;
+	opcodeRoutines[0x5] = &Chip8::op_5xy0;
+	opcodeRoutines[0x6] = &Chip8::op_6xnn;
+	opcodeRoutines[0x7] = &Chip8::op_7xnn;
 
-	opcodeRoutines[0x8] = routine8;
+	opcodeRoutines[0x8] = &Chip8::routine8;
 
-	opcodeRoutines[0x9] = op_9xy0;
-	opcodeRoutines[0xa] = op_annn;
-	opcodeRoutines[0xb] = op_bnnn;
-	opcodeRoutines[0xc] = op_cxnn;
-	opcodeRoutines[0xd] = op_dxyn;
+	opcodeRoutines[0x9] = &Chip8::op_9xy0;
+	opcodeRoutines[0xa] = &Chip8::op_annn;
+	opcodeRoutines[0xb] = &Chip8::op_bnnn;
+	opcodeRoutines[0xc] = &Chip8::op_cxnn;
+	opcodeRoutines[0xd] = &Chip8::op_dxyn;
 
-	opcodeRoutines[0xe] = routineE;
-	opcodeRoutines[0xf] = routineF;
-
-
-	opcodeRoutines0[0x0] = op_00e0;
-	opcodeRoutines0[0xe] = op_00ee;
+	opcodeRoutines[0xe] = &Chip8::routineE;
+	opcodeRoutines[0xf] = &Chip8::routineF;
 
 
-	opcodeRoutines8[0x0] = op_8xy0;
-	opcodeRoutines8[0x1] = op_8xy1;
-	opcodeRoutines8[0x2] = op_8xy2;
-	opcodeRoutines8[0x3] = op_8xy3;
-	opcodeRoutines8[0x4] = op_8xy4;
-	opcodeRoutines8[0x5] = op_8xy5;
-	opcodeRoutines8[0x0] = op_8xy6;
-	opcodeRoutines8[0x7] = op_8xy7;
-	opcodeRoutines8[0xe] = op_8xye;
+	opcodeRoutines0[0x0] = &Chip8::op_00e0;
+	opcodeRoutines0[0xe] = &Chip8::op_00ee;
 
 
-	opcodeRoutinesE[0x1] = op_exa1;
-	opcodeRoutinesE[0xe] = op_ex9e;
+	opcodeRoutines8[0x0] = &Chip8::op_8xy0;
+	opcodeRoutines8[0x1] = &Chip8::op_8xy1;
+	opcodeRoutines8[0x2] = &Chip8::op_8xy2;
+	opcodeRoutines8[0x3] = &Chip8::op_8xy3;
+	opcodeRoutines8[0x4] = &Chip8::op_8xy4;
+	opcodeRoutines8[0x5] = &Chip8::op_8xy5;
+	opcodeRoutines8[0x6] = &Chip8::op_8xy6;
+	opcodeRoutines8[0x7] = &Chip8::op_8xy7;
+	opcodeRoutines8[0xe] = &Chip8::op_8xye;
 
 
-	opcodeRoutinesF[0x07] = op_fx07;
-	opcodeRoutinesF[0x0a] = op_fx0a;
-	opcodeRoutinesF[0x15] = op_fx15;
-	opcodeRoutinesF[0x18] = op_fx18;
-	opcodeRoutinesF[0x1E] = op_fx1E;
-	opcodeRoutinesF[0x29] = op_fx29;
-	opcodeRoutinesF[0x33] = op_fx33;
-	opcodeRoutinesF[0x55] = op_fx55;
-	opcodeRoutinesF[0x65] = op_fx65;
+	opcodeRoutinesE[0x1] = &Chip8::op_exa1;
+	opcodeRoutinesE[0xe] = &Chip8::op_ex9e;
+
+
+	opcodeRoutinesF[0x07] = &Chip8::op_fx07;
+	opcodeRoutinesF[0x0a] = &Chip8::op_fx0a;
+	opcodeRoutinesF[0x15] = &Chip8::op_fx15;
+	opcodeRoutinesF[0x18] = &Chip8::op_fx18;
+	opcodeRoutinesF[0x1E] = &Chip8::op_fx1E;
+	opcodeRoutinesF[0x29] = &Chip8::op_fx29;
+	opcodeRoutinesF[0x33] = &Chip8::op_fx33;
+	opcodeRoutinesF[0x55] = &Chip8::op_fx55;
+	opcodeRoutinesF[0x65] = &Chip8::op_fx65;
 }
 
 void Chip8::op_00e0()
@@ -110,7 +116,8 @@ void Chip8::op_00e0()
 
 void Chip8::op_00ee()
 {
-	programCounter = stack[--stackPointer];
+	stackPointer--;
+	programCounter = stack[stackPointer];
 }
 
 void Chip8::op_1nnn()
@@ -120,7 +127,8 @@ void Chip8::op_1nnn()
 
 void Chip8::op_2nnn()
 {
-	stack[stackPointer++] = programCounter;
+	stack[stackPointer] = programCounter;
+	stackPointer++;
 	programCounter = opcode & 0x0fffu;
 }
 
@@ -148,7 +156,7 @@ void Chip8::op_5xy0()
 	uint8_t x_register = (opcode & 0x0f00u) >> 8u;
 	uint8_t y_register = (opcode & 0x00f0u) >> 4u;
 
-	if(x_register == y_register)
+	if(registers[x_register] == registers[y_register])
 		programCounter += 2;
 }
 
@@ -181,7 +189,7 @@ void  Chip8::op_8xy1()
 	uint8_t x_register = (opcode & 0x0f00u) >> 8u;
 	uint8_t y_register = (opcode & 0x00f0u) >> 4u;
 
-	registers[x_register] = registers[x_register] | registers[y_register];
+	registers[x_register] |= registers[y_register];
 }
 
 void Chip8::op_8xy2()
@@ -189,7 +197,7 @@ void Chip8::op_8xy2()
 	uint8_t x_register = (opcode & 0x0f00u) >> 8u;
 	uint8_t y_register = (opcode & 0x00f0u) >> 4u;
 
-	registers[x_register] = registers[x_register] & registers[y_register];
+	registers[x_register] &= registers[y_register];
 }
 
 void  Chip8::op_8xy3()
@@ -197,7 +205,7 @@ void  Chip8::op_8xy3()
 	uint8_t x_register = (opcode & 0x0f00u) >> 8u;
 	uint8_t y_register = (opcode & 0x00f0u) >> 4u;
 
-	registers[x_register] = registers[x_register] ^ registers[y_register];
+	registers[x_register] ^= registers[y_register];
 }
 
 void  Chip8::op_8xy4()
@@ -208,7 +216,7 @@ void  Chip8::op_8xy4()
 	uint16_t register_sum = registers[x_register] + registers[y_register];
 
 	registers[0xfu] = (register_sum > 0xffu) ? 1 : 0;
-	registers[x_register] += register_sum & 0xffu;
+	registers[x_register] = register_sum & 0xffu;
 }
 
 void  Chip8::op_8xy5()
@@ -233,7 +241,7 @@ void  Chip8::op_8xy7()
 	uint8_t x_register = (opcode & 0x0f00u) >> 8u;
 	uint8_t y_register = (opcode & 0x00f0u) >> 4u;
 
-	registers[0xfu] = (registers[y_register] > registers[x_register]) ? 1 : 0;
+	registers[0xf] = (registers[y_register] > registers[x_register]) ? 1 : 0;
 	registers[x_register] = registers[y_register] - registers[x_register];
 }
 
@@ -241,7 +249,7 @@ void  Chip8::op_8xye()
 {
 	uint8_t x_register = (opcode & 0x0f00u) >> 8u;
 
-	registers[0xfu] = registers[x_register] & 0x80u;
+	registers[0xfu] = (registers[x_register] & 0x80u) >> 7u;
 	registers[x_register] <<= 1u;
 }
 
@@ -250,7 +258,7 @@ void Chip8::op_9xy0()
 	uint8_t x_register = (opcode & 0x0f00u) >> 8u;
 	uint8_t y_register = (opcode & 0x00f0u) >> 4u;
 
-	if (x_register != y_register)
+	if (registers[x_register] != registers[y_register])
 		programCounter += 2;
 }
 

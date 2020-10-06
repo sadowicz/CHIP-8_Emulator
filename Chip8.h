@@ -1,6 +1,9 @@
 #pragma once
 
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <cstdint>
+#include <iostream>
 #include <fstream>
 #include <random>
 #include <chrono>
@@ -8,12 +11,24 @@
 class Chip8
 {
 	typedef void (Chip8::* ExecutingRoutine)(void);
+	
+	friend class Emulator;
 
 public:
 	Chip8();
 	void Cycle();
+	void LoadROM(std::string inputFileName);
 
-	void LoadROM(char const* inputFileName);
+	static const unsigned int REGISTERS_AMOUNT = 16;
+	static const unsigned int MEMORY_SIZE = 4096;
+	static const unsigned int STACK_LEVELS = 16;
+	static const unsigned int DISPLAY_WIDTH = 64;
+	static const unsigned int DISPLAY_HEIGHT = 32;
+	static const unsigned int INPUT_KEYS_AMOUNT = 16;
+	static const unsigned int FONTSET_SIZE = 80;
+	
+private:
+
 	void LoadFonts();
 	void InitRoutines();
 
@@ -58,19 +73,9 @@ public:
 	inline void routineE() { (this->*opcodeRoutinesE[opcode & 0x000fu])(); }
 	inline void routineF() { (this->*opcodeRoutinesF[opcode & 0x00ffu])(); }
 
-
-
-	static const unsigned int REGISTERS_AMOUNT = 16;
-	static const unsigned int MEMORY_SIZE = 4096;
-	static const unsigned int STACK_LEVELS = 16;
-	static const unsigned int DISPLAY_WIDTH = 64; // width * height
-	static const unsigned int DISPLAY_HEIGHT = 32; // width * height
-	static const unsigned int INPUT_KEYS_AMOUNT = 16;
-	static const unsigned int FONTSET_SIZE = 80;
-
-	const unsigned int START_ADRESS = 0x200u;
-	const unsigned int FONTSET_START_ADRESS = 0x50u;
-	const unsigned int SPRITE_WIDTH =8;
+	const unsigned int START_ADRESS = 0x200;
+	const unsigned int FONTSET_START_ADRESS = 0x50;
+	const unsigned int SPRITE_WIDTH = 8;
 
 	uint8_t registers[REGISTERS_AMOUNT]{};
 	uint8_t memory[MEMORY_SIZE]{};
@@ -102,17 +107,15 @@ public:
 		0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 	};
 
-	ExecutingRoutine opcodeRoutines[0xf + 1]{ &op_empty };
-	ExecutingRoutine opcodeRoutines0[0xe + 1]{ &op_empty };
-	ExecutingRoutine opcodeRoutines8[0xe + 1]{ &op_empty };
-	ExecutingRoutine opcodeRoutinesE[0xe + 1]{ &op_empty };
-	ExecutingRoutine opcodeRoutinesF[0x65 + 1]{ &op_empty };
+	ExecutingRoutine opcodeRoutines[0xf + 1]{ &Chip8::op_empty };
+	ExecutingRoutine opcodeRoutines0[0xe + 1]{ &Chip8::op_empty };
+	ExecutingRoutine opcodeRoutines8[0xe + 1]{ &Chip8::op_empty };
+	ExecutingRoutine opcodeRoutinesE[0xe + 1]{ &Chip8::op_empty };
+	ExecutingRoutine opcodeRoutinesF[0x65 + 1]{ &Chip8::op_empty };
 
 	std::default_random_engine randEngine;
 	std::uniform_int_distribution<uint16_t> randNumb;
 
-
 	uint16_t opcode;
-
 };
 
