@@ -24,6 +24,7 @@ public:
 	static const unsigned int STACK_LEVELS = 16;
 	static const unsigned int DISPLAY_WIDTH = 64;
 	static const unsigned int DISPLAY_HEIGHT = 32;
+	static const unsigned int RGBA_CHANNELS = 4;
 	static const unsigned int INPUT_KEYS_AMOUNT = 16;
 	static const unsigned int FONTSET_SIZE = 80;
 	
@@ -86,7 +87,7 @@ private:
 	uint8_t delayTimer{};
 	uint8_t soundTimer{};
 	uint8_t keypad[INPUT_KEYS_AMOUNT]{};
-	uint32_t display[DISPLAY_WIDTH * DISPLAY_HEIGHT]{};
+	uint8_t display[DISPLAY_WIDTH * DISPLAY_HEIGHT * RGBA_CHANNELS]{};
 	uint8_t fontset[FONTSET_SIZE] =
 	{
 		0xF0, 0x90, 0x90, 0x90, 0xF0, // 0

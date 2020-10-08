@@ -7,7 +7,6 @@ Chip8::Chip8() : randEngine{ static_cast<unsigned int>(chrono::system_clock::now
 	programCounter = START_ADRESS;
 
 	LoadFonts();
-
 	InitRoutines();
 
 	randNumb = uniform_int_distribution<uint16_t>(0, 255U);
@@ -16,11 +15,11 @@ Chip8::Chip8() : randEngine{ static_cast<unsigned int>(chrono::system_clock::now
 void Chip8::Cycle()
 {
 	opcode = (memory[programCounter] << 8u) | memory[programCounter + 1];
-	//printf("%x\t", opcode);
+	
 	programCounter += 2;
 
 	int index = (opcode & 0xf000u) >> 12u;
-	//printf("%d\n", index);
+	
 	((*this).*(opcodeRoutines[index]))();
 
 	if(delayTimer > 0) delayTimer--;
@@ -127,8 +126,7 @@ void Chip8::op_1nnn()
 
 void Chip8::op_2nnn()
 {
-	stack[stackPointer] = programCounter;
-	stackPointer++;
+	stack[stackPointer++] = programCounter;
 	programCounter = opcode & 0x0fffu;
 }
 
@@ -298,14 +296,15 @@ void Chip8::op_dxyn()
 		for(unsigned int column = 0; column < SPRITE_WIDTH; column++)
 		{
 			uint8_t spritePixel = spriteByte & (0x80u >> column);
-			uint32_t* displayPixel = &display[(yCoord + row) * DISPLAY_WIDTH + xCoord + column];
+			uint8_t* displayPixel = &display[(yCoord + row) * DISPLAY_WIDTH * RGBA_CHANNELS + (xCoord + column) * RGBA_CHANNELS];
 
 			if(spritePixel)
 			{
-				if(*displayPixel == 0xffffffffu)
+				if(displayPixel[0] == 0xffu)
 					registers[0xfu] = 1;
 
-				*displayPixel ^= 0xffffffffu;
+				for(unsigned int channel = 0; channel < RGBA_CHANNELS; channel++)
+					displayPixel[channel] ^= 0xffu;
 			}
 		}
 	}

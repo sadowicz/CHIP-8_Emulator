@@ -1,6 +1,7 @@
 #include "Emulator.h"
 
 using namespace std;
+using namespace sf;
 
 Emulator::~Emulator()
 {
@@ -24,7 +25,7 @@ void Emulator::GetInput()
 
 void Emulator::SetUp()
 {
-	PlatformLayer = new Platform{ "CHIP-8 EMULATOR by Filip", static_cast<int>(Chip8::DISPLAY_WIDTH) * DisplayScale, static_cast<int>(Chip8::DISPLAY_HEIGHT) * DisplayScale, static_cast<int>(Chip8::DISPLAY_WIDTH), static_cast<int>(Chip8::DISPLAY_HEIGHT) };
+	PlatformLayer = new Platform{ "CHIP-8 EMULATOR by Filip", Vector2u{ static_cast<unsigned int>(Chip8::DISPLAY_WIDTH) * DisplayScale, static_cast<unsigned int>(Chip8::DISPLAY_HEIGHT) * DisplayScale }, Vector2u{ static_cast<unsigned int>(Chip8::DISPLAY_WIDTH), static_cast<unsigned int>(Chip8::DISPLAY_HEIGHT) } };
 
 	Chip8Logic = new Chip8{};
 	Chip8Logic->LoadROM(NameOfROM);
@@ -48,7 +49,7 @@ void Emulator::Emulate()
 		{
 			lastCycleTime = currentTime;
 			Chip8Logic->Cycle();
-			PlatformLayer->Update(Chip8Logic->display, displayPitch);
+			PlatformLayer->Update(Chip8Logic->display);
 		}
 	}
 }

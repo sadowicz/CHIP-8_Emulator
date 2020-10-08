@@ -1,155 +1,215 @@
 #include "Platform.h"
 
-Platform::Platform(char const* windowTitle, int windowWidth, int windowHeight, int textureWidth, int textureHeight)
-{
-	SDL_Init(SDL_INIT_VIDEO);
+using namespace std;
+using namespace sf;
 
-	emulatorWindow = SDL_CreateWindow(windowTitle, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight, SDL_WINDOW_SHOWN);
-	emulatorRenderer = SDL_CreateRenderer(emulatorWindow, -1, SDL_RENDERER_ACCELERATED);
-	emulatorDisplayTexture = SDL_CreateTexture(emulatorRenderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, textureWidth, textureHeight);
+Platform::Platform(string windowTitle, Vector2u windowSize, Vector2u textureSize)
+{
+	window = new RenderWindow{ VideoMode{windowSize.x, windowSize.y}, windowTitle, Style::Titlebar | Style::Close };
+
+	displayTexture = InitTexture(textureSize);
+
+	displaySprite = InitSprite(displayTexture, Vector2u{windowSize.x / textureSize.x, windowSize.y / textureSize.y });
 }
 
 Platform::~Platform()
 {
-	SDL_DestroyTexture(emulatorDisplayTexture);
-	SDL_DestroyRenderer(emulatorRenderer);
-	SDL_DestroyWindow(emulatorWindow);
-
-	SDL_Quit();
+	delete displaySprite;
+	delete displayTexture;
+	delete window;
 }
 
-void Platform::Update(const void* displayBuffer, int pitch)
+void Platform::Update(uint8_t* displayBuffer)
 {
-	SDL_UpdateTexture(emulatorDisplayTexture, nullptr, displayBuffer, pitch);
-	SDL_RenderClear(emulatorRenderer);
-	SDL_RenderCopy(emulatorRenderer, emulatorDisplayTexture, nullptr, nullptr);
-	SDL_RenderPresent(emulatorRenderer);
+	displayTexture->update(displayBuffer);
+
+	window->clear();
+
+	window->draw(*displaySprite);
+
+	window->display();
 }
 
 bool Platform::ProcessInput(uint8_t* keypad)
 {
-	SDL_Event event;
+	Event event;
 	bool quit = false;
 
-	while(SDL_PollEvent(&event))
+	while(window->pollEvent(event))
 	{
 		switch(event.type)
 		{
-			case SDL_QUIT:
-				quit = true;	break;
+			case Event::Closed:
+				quit = true;
+				break;
 
-			case SDL_KEYDOWN:
+			case Event::KeyPressed:
 			{
-				switch(event.key.keysym.sym)
+				switch(event.key.code)
 				{
-					case SDLK_ESCAPE:
-						quit = true;		break;
+					case Keyboard::Escape:
+						quit = true;
+						break;
 
-					case SDLK_x:
-						keypad[0] = 1;		break;
+					case Keyboard::X:
+						keypad[0] = 1;
+						break;
 
-					case SDLK_1:
-						keypad[1] = 1;		break;
+					case Keyboard::Num1:
+						keypad[1] = 1;
+						break;
 
-					case SDLK_2:
-						keypad[2] = 1;		break;
+					case Keyboard::Num2:
+						keypad[2] = 1;
+						break;
 
-					case SDLK_3:
-						keypad[3] = 1;		break;
+					case Keyboard::Num3:
+						keypad[3] = 1;
+						break;
 
-					case SDLK_q:
-						keypad[4] = 1;		break;
+					case Keyboard::Q:
+						keypad[4] = 1;
+						break;
 
-					case SDLK_w:
-						keypad[5] = 1;		break;
+					case Keyboard::W:
+						keypad[5] = 1;
+						break;
 
-					case SDLK_e:
-						keypad[6] = 1;		break;
+					case Keyboard::E:
+						keypad[6] = 1;
+						break;
 
-					case SDLK_a:
-						keypad[7] = 1;		break;
+					case Keyboard::A:
+						keypad[7] = 1;
+						break;
 
-					case SDLK_s:
-						keypad[8] = 1;		break;
+					case Keyboard::S:
+						keypad[8] = 1;
+						break;
 
-					case SDLK_d:
-						keypad[9] = 1;		break;
+					case Keyboard::D:
+						keypad[9] = 1;
+						break;
 
-					case SDLK_z:
-						keypad[0xa] = 1;	break;
+					case Keyboard::Z:
+						keypad[0xa] = 1;
+						break;
 
-					case SDLK_c:
-						keypad[0xb] = 1;	break;
+					case Keyboard::C:
+						keypad[0xb] = 1;
+						break;
 
-					case SDLK_4:
-						keypad[0xc] = 1;	break;
+					case Keyboard::Num4:
+						keypad[0xc] = 1;
+						break;
 
-					case SDLK_r:
-						keypad[0xd] = 1;	break;
+					case Keyboard::R:
+						keypad[0xd] = 1;
+						break;
 
-					case SDLK_f:
-						keypad[0xe] = 1;	break;
+					case Keyboard::F:
+						keypad[0xe] = 1;
+						break;
 
-					case SDLK_v:
-						keypad[0xf] = 1;	break;
+					case Keyboard::V:
+						keypad[0xf] = 1;
+						break;
 				}
-			} break;
+				break;
+			}
 
-			case SDL_KEYUP:
+			case Event::KeyReleased:
 			{
-				switch(event.key.keysym.sym)
+				switch(event.key.code)
 				{
-					case SDLK_x:
-						keypad[0] = 0;		break;
+					case Keyboard::Escape:
+						quit = true;
+						break;
 
-					case SDLK_1:
-						keypad[1] = 0;		break;
+					case Keyboard::X:
+						keypad[0] = 0;
+						break;
 
-					case SDLK_2:
-						keypad[2] = 0;		break;
+					case Keyboard::Num1:
+						keypad[1] = 0;
+						break;
 
-					case SDLK_3:
-						keypad[3] = 0;		break;
+					case Keyboard::Num2:
+						keypad[2] = 0;
+						break;
 
-					case SDLK_q:
-						keypad[4] = 0;		break;
+					case Keyboard::Num3:
+						keypad[3] = 0;
+						break;
 
-					case SDLK_w:
-						keypad[5] = 0;		break;
+					case Keyboard::Q:
+						keypad[4] = 0;
+						break;
 
-					case SDLK_e:
-						keypad[6] = 0;		break;
+					case Keyboard::W:
+						keypad[5] = 0;
+						break;
 
-					case SDLK_a:
-						keypad[7] = 0;		break;
+					case Keyboard::E:
+						keypad[6] = 0;
+						break;
 
-					case SDLK_s:
-						keypad[8] = 0;		break;
+					case Keyboard::A:
+						keypad[7] = 0;
+						break;
 
-					case SDLK_d:
-						keypad[9] = 0;		break;
+					case Keyboard::S:
+						keypad[8] = 0;
+						break;
 
-					case SDLK_z:
-						keypad[0xa] = 0;	break;
+					case Keyboard::D:
+						keypad[9] = 0;
+						break;
 
-					case SDLK_c:
-						keypad[0xb] = 0;	break;
+					case Keyboard::Z:
+						keypad[0xa] = 0;
+						break;
 
-					case SDLK_4:
-						keypad[0xc] = 0;	break;
+					case Keyboard::C:
+						keypad[0xb] = 0;
+						break;
 
-					case SDLK_r:
-						keypad[0xd] = 0;	break;
+					case Keyboard::Num4:
+						keypad[0xc] = 0;
+						break;
 
-					case SDLK_f:
-						keypad[0xe] = 0;	break;
+					case Keyboard::R:
+						keypad[0xd] = 0;
+						break;
 
-					case SDLK_v:
-						keypad[0xf] = 0;	break;
+					case Keyboard::F:
+						keypad[0xe] = 0;
+						break;
+
+					case Keyboard::V:
+						keypad[0xf] = 0;
+						break;
 				}
-			}break;
+				break;
+			}
 		}
 	}
 
 	return quit;
+}
+
+Texture* Platform::InitTexture(Vector2u size)
+{
+	Texture* texture = new Texture{};
+	texture->create(size.x, size.y);
+
+	return texture;
+}
+
+Sprite* Platform::InitSprite(Texture* baseTexture, Vector2u scale)
+{
+	Sprite* sprite = new Sprite{ *baseTexture };
+	sprite->scale(scale.x, scale.y);
+
+	return sprite;
 }
